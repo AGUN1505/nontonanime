@@ -1,24 +1,67 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { getAnimeById } from "@/services/jikan";
-import { ChevronLeft, Star, Play, Info } from "lucide-react";
+import { searchAndGetAnimeEpisodes, getEpisodeResolutions, getEmbedFromContent } from "@/services/otakudesu";
+import dynamic from "next/dynamic";
+import { ChevronLeft, Star, Info } from "lucide-react";
+
+// Dynamically load client-side components
+const VideoPlayer = dynamic(() => import("@/components/VideoPlayer"), {
+  ssr: false,
+});
+const ResolutionSelector = dynamic(() => import("@/components/ResolutionSelector"), {
+  ssr: false,
+});
 
 interface Props {
   params: {
     id: string;
   };
+  searchParams: {
+    ep?: string;
+    content?: string;
+  };
 }
 
-export default async function WatchPage({ params }: Props) {
+export default async function WatchPage({ params, searchParams }: Props) {
+  // 1. Fetch metadata from Jikan API using MAL ID
   const anime = await getAnimeById(params.id);
-
   if (!anime) {
     notFound();
   }
 
-  // Generate episodes array (Jikan does not provide direct streaming episode links, so we generate mock episode buttons based on total episodes)
-  const totalEpisodes = anime.episodes || 12;
-  const episodes = Array.from({ length: totalEpisodes }, (_, i) => i + 1);
+  // 2. Fetch Otakudesu anime info & episode list
+  const otakAnime = await searchAndGetAnimeEpisodes(anime.title);
+  const episodes = otakAnime?.episodes || [];
+
+  // 3. Determine active episode
+  const activeEpisodeNumber = searchParams.ep ? parseInt(searchParams.ep) : 1;
+  const currentEpisode = episodes.find((ep) => ep.number === activeEpisodeNumber) || episodes[0] || null;
+
+  // 4. Scrape all resolutions / mirrors for the current episode
+  let resolutions: any[] = [];
+  if (currentEpisode) {
+    resolutions = await getEpisodeResolutions(currentEpisode.url);
+  }
+
+  // 5. Select the default quality/mirror payload if not defined in query
+  // Prioritize 480p updesu/desudesu or fallback to first option
+  let activeContent = searchParams.content || "";
+  if (!activeContent && resolutions.length > 0) {
+    const defaultOption = 
+      resolutions.find(r => r.quality === "480p" && (r.mirror.includes("desu") || r.mirror.includes("up"))) || 
+      resolutions[0];
+    activeContent = defaultOption.content;
+  }
+
+  // 6. Resolve embed stream URL using active content token
+  let streamUrl = "";
+  if (currentEpisode && activeContent) {
+    const resolvedUrl = await getEmbedFromContent(currentEpisode.url, activeContent);
+    if (resolvedUrl) {
+      streamUrl = resolvedUrl;
+    }
+  }
 
   return (
     <div className="flex flex-col min-h-screen bg-zinc-950 text-zinc-50 pb-12">
@@ -28,7 +71,9 @@ export default async function WatchPage({ params }: Props) {
           <ChevronLeft className="size-4" /> Kembali
         </Link>
         <span className="text-zinc-700">|</span>
-        <h1 className="text-sm font-semibold truncate text-zinc-300">{anime.title}</h1>
+        <h1 className="text-sm font-semibold truncate text-zinc-300">
+          {anime.title} {currentEpisode ? `- Episode ${currentEpisode.number}` : ""}
+        </h1>
       </header>
 
       {/* Main Content */}
@@ -36,7 +81,9 @@ export default async function WatchPage({ params }: Props) {
         {/* Left Column: Player & Info */}
         <div className="lg:col-span-2 flex flex-col gap-6">
           {/* Video Player */}
-          {anime.trailer.embed_url ? (
+          {streamUrl ? (
+            <VideoPlayer src={streamUrl} />
+          ) : anime.trailer.embed_url ? (
             <div className="relative aspect-video w-full bg-black rounded-lg overflow-hidden border border-zinc-900">
               <iframe
                 src={anime.trailer.embed_url}
@@ -44,14 +91,14 @@ export default async function WatchPage({ params }: Props) {
                 allowFullScreen
                 title={`${anime.title} Trailer`}
               />
+              <div className="absolute top-4 left-4 bg-red-600/90 text-white text-xs font-semibold px-3 py-1 rounded backdrop-blur">
+                Memutar Trailer (Link Streaming Episode Belum Tersedia)
+              </div>
             </div>
           ) : (
-            <div className="relative aspect-video w-full bg-black rounded-lg overflow-hidden flex items-center justify-center border border-zinc-900 group">
-              <div className="absolute inset-0 bg-zinc-900/20 flex flex-col items-center justify-center gap-3">
-                <div className="p-4 bg-red-600 rounded-full text-white cursor-pointer hover:bg-red-700 transition shadow-lg shadow-red-600/30">
-                  <Play className="size-8 fill-white" />
-                </div>
-                <span className="text-sm text-zinc-400 font-medium">Video Player Placeholder (No Trailer Available)</span>
+            <div className="relative aspect-video w-full bg-black rounded-lg overflow-hidden flex items-center justify-center border border-zinc-900">
+              <div className="flex flex-col items-center gap-3 text-zinc-500">
+                <span className="text-sm font-medium">Link Streaming Tidak Tersedia untuk Episode Ini</span>
               </div>
             </div>
           )}
@@ -67,10 +114,14 @@ export default async function WatchPage({ params }: Props) {
               <span>{anime.type}</span>
               <span>•</span>
               <span className="text-emerald-500">{anime.status}</span>
-              <span>•</span>
-              <span className="text-zinc-300 bg-zinc-900 border border-zinc-800 px-2 py-0.5 rounded">
-                Episode 1
-              </span>
+              {currentEpisode && (
+                <>
+                  <span>•</span>
+                  <span className="text-zinc-300 bg-zinc-900 border border-zinc-800 px-2 py-0.5 rounded">
+                    Episode {currentEpisode.number}
+                  </span>
+                </>
+              )}
             </div>
             
             <div className="flex flex-wrap gap-2">
@@ -90,25 +141,43 @@ export default async function WatchPage({ params }: Props) {
           </div>
         </div>
 
-        {/* Right Column: Episode List */}
-        <div className="lg:col-span-1 flex flex-col gap-4">
+        {/* Right Column: Episode & Resolution Lists */}
+        <div className="lg:col-span-1 flex flex-col gap-6">
+          {/* Resolution Selector Component */}
+          {currentEpisode && resolutions.length > 0 && (
+            <ResolutionSelector
+              resolutions={resolutions}
+              activeContent={activeContent}
+              animeId={params.id}
+              episodeNumber={currentEpisode.number}
+            />
+          )}
+
+          {/* Episode Selector */}
           <div className="border border-zinc-900 rounded-lg p-4 bg-zinc-900/20 flex flex-col gap-4">
             <h3 className="font-bold text-lg border-b border-zinc-900 pb-2">Daftar Episode</h3>
             
-            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-3 gap-2 max-h-[350px] overflow-y-auto pr-1">
-              {episodes.map((ep) => (
-                <button
-                  key={ep}
-                  className={`py-3 px-2 text-center rounded text-sm font-semibold transition border ${
-                    ep === 1
-                      ? "bg-red-600 border-red-500 text-white font-bold"
-                      : "bg-zinc-900 hover:bg-zinc-800 border-zinc-800 text-zinc-300"
-                  }`}
-                >
-                  Ep {ep}
-                </button>
-              ))}
-            </div>
+            {episodes.length > 0 ? (
+              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-3 gap-2 max-h-[350px] overflow-y-auto pr-1">
+                {episodes.map((ep) => (
+                  <Link
+                    key={ep.url}
+                    href={`/watch/${params.id}?ep=${ep.number}`}
+                    className={`py-3 px-2 text-center rounded text-sm font-semibold transition border ${
+                      ep.number === activeEpisodeNumber
+                        ? "bg-red-600 border-red-500 text-white font-bold"
+                        : "bg-zinc-900 hover:bg-zinc-800 border-zinc-800 text-zinc-300"
+                    }`}
+                  >
+                    Ep {ep.number}
+                  </Link>
+                ))}
+              </div>
+            ) : (
+              <div className="text-center py-6 text-zinc-500 text-sm">
+                Belum ada episode yang di-scrap.
+              </div>
+            )}
           </div>
 
           {/* Quick info card */}

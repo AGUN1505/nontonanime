@@ -1,15 +1,14 @@
 {
   "version": "1.0",
-  "last_updated": "2026-07-10T12:00:00Z",
+  "last_updated": "2026-07-10T00:00:00Z",
   "libraries": {
-    "next": {
+    "otakudesu": {
       "files": [
         {
-          "filename": "swc-failed-to-load.md",
-          "topic": "swc-failed-to-load",
-          "tech_stack": "Next.js",
-          "fetched": "2026-07-10T12:00:00Z",
-          "source": "Official docs"
+          "filename": "domain.md",
+          "topic": "active domain",
+          "fetched": "2026-07-10T00:00:00Z",
+          "source": "Tachiyomi Anime Extensions"
         }
       ]
     }
