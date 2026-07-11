@@ -1,44 +1,41 @@
 import { NextResponse } from "next/server";
-import { OTAKUDESU_BASE } from "@/services/otakudesu";
 
 export const dynamic = "force-dynamic";
 
 export async function GET() {
-  const result: Record<string, any> = {
-    target: OTAKUDESU_BASE,
-    success: false,
-    status: 0,
-    headers: {},
-    error: null,
-    preview: "",
-  };
+  const target = "https://otakudesu.blog";
+  const proxies = [
+    { name: "allorigins", url: `https://api.allorigins.win/raw?url=${encodeURIComponent(target)}` },
+    { name: "codetabs", url: `https://api.codetabs.com/v1/proxy?quest=${encodeURIComponent(target)}` },
+    { name: "corsproxy.io", url: `https://corsproxy.io/?${encodeURIComponent(target)}` },
+  ];
 
-  try {
-    const PROXY_URL = "https://api.allorigins.win/raw?url=";
-    const proxiedUrl = `${PROXY_URL}${encodeURIComponent(OTAKUDESU_BASE)}`;
+  const results: any[] = [];
 
-    const res = await fetch(proxiedUrl, {
-      headers: {
-        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
-        "Referer": OTAKUDESU_BASE,
-      },
-      next: { revalidate: 0 },
-    });
+  for (const proxy of proxies) {
+    try {
+      const res = await fetch(proxy.url, {
+        headers: {
+          "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+        },
+        next: { revalidate: 0 },
+      });
 
-    result.status = res.status;
-    result.success = res.ok;
-    
-    const headersObj: Record<string, string> = {};
-    res.headers.forEach((val, key) => {
-      headersObj[key] = val;
-    });
-    result.headers = headersObj;
-
-    const html = await res.text();
-    result.preview = html.substring(0, 1000);
-  } catch (err: any) {
-    result.error = err.message || String(err);
+      const html = await res.text();
+      results.push({
+        proxy: proxy.name,
+        success: res.ok,
+        status: res.status,
+        preview: html.substring(0, 500),
+      });
+    } catch (err: any) {
+      results.push({
+        proxy: proxy.name,
+        success: false,
+        error: err.message || String(err),
+      });
+    }
   }
 
-  return NextResponse.json(result);
+  return NextResponse.json({ results });
 }
