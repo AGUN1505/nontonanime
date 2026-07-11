@@ -7,7 +7,7 @@ interface ResolutionSelectorProps {
   resolutions: OtakuResolution[];
   activeContent: string;
   animeId: string;
-  episodeNumber: number;
+  episodeNumber: any;
 }
 
 export default function ResolutionSelector({
