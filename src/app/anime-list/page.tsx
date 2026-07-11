@@ -4,6 +4,7 @@ import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import { Search, ChevronUp } from "lucide-react";
 import { getAnimeList, OtakuAlphabetGroup } from "@/services/otakudesu";
+import Navbar from "@/components/Navbar";
 
 export default function AnimeListPage() {
   const [data, setData] = useState<OtakuAlphabetGroup[]>([]);
@@ -63,12 +64,20 @@ export default function AnimeListPage() {
 
   return (
     <div className="flex flex-col min-h-screen pb-12 bg-zinc-950 text-zinc-50">
-      {/* Header */}
-      <header className="sticky top-0 z-50 bg-zinc-950/80 backdrop-blur-md border-b border-zinc-900 px-6 py-4 flex items-center justify-between">
-        <Link href="/" className="text-xl font-bold text-red-500 tracking-wider">
-          NONTONANIME
-        </Link>
-        <div className="flex items-center gap-6">
+      <Navbar />
+
+      <main className="px-4 md:px-12 mt-8 w-full max-w-7xl mx-auto flex-1">
+        {/* Header Title */}
+        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 border-b border-zinc-900 pb-6 mb-8">
+          <div>
+            <h1 className="text-2xl md:text-3xl font-extrabold tracking-tight">
+              Daftar Anime Terlengkap
+            </h1>
+            <p className="text-sm text-zinc-400 mt-1">
+              Cari dan telusuri anime favorit Anda secara berurutan abjad (A-Z).
+            </p>
+          </div>
+
           <div className="relative w-full md:w-80">
             <span className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
               <Search className="h-4 w-4 text-zinc-500" />
@@ -77,30 +86,10 @@ export default function AnimeListPage() {
               type="text"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="Cari judul anime..."
+              placeholder="Filter list abjad..."
               className="w-full bg-zinc-900 border border-zinc-800 text-zinc-100 rounded-full pl-9 pr-4 py-2 text-xs placeholder-zinc-500 focus:outline-none focus:border-red-500 transition-all"
             />
           </div>
-          <nav className="flex items-center gap-4 text-sm font-medium text-zinc-400">
-            <Link href="/" className="hover:text-zinc-100 transition">Home</Link>
-            <Link href="/ongoing" className="hover:text-zinc-100 transition">Ongoing</Link>
-            <Link href="/complete" className="hover:text-zinc-100 transition">Completed</Link>
-            <Link href="/anime-list" className="text-zinc-100 font-semibold border-b-2 border-red-500 pb-1">Anime List</Link>
-            <Link href="/schedule" className="hover:text-zinc-100 transition">Jadwal Rilis</Link>
-            <Link href="/genres" className="hover:text-zinc-100 transition">Genres</Link>
-          </nav>
-        </div>
-      </header>
-
-      <main className="px-6 md:px-12 mt-8 w-full max-w-7xl mx-auto flex-1">
-        {/* Header Title */}
-        <div className="flex flex-col gap-2 border-b border-zinc-900 pb-6 mb-8">
-          <h1 className="text-2xl md:text-3xl font-extrabold tracking-tight">
-            Daftar Anime Terlengkap
-          </h1>
-          <p className="text-sm text-zinc-400">
-            Cari dan telusuri anime favorit Anda secara berurutan abjad (A-Z).
-          </p>
         </div>
 
         {loading ? (

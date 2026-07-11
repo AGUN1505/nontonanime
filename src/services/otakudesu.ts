@@ -34,6 +34,10 @@ export interface OtakuAnimeDetail {
   status: string;
   type: string;
   score: string;
+  japanese?: string;
+  producer?: string;
+  duration?: string;
+  studio?: string;
 }
 
 export interface OtakuResolution {
@@ -187,6 +191,10 @@ export async function getOtakuAnimeDetail(slug: string): Promise<OtakuAnimeDetai
     const status = $(".infozingle p:contains('Status')").text().replace("Status", "").replace(":", "").trim();
     const type = $(".infozingle p:contains('Tipe')").text().replace("Tipe", "").replace(":", "").trim();
     const score = $(".infozingle p:contains('Skor')").text().replace("Skor", "").replace(":", "").trim() || "N/A";
+    const japanese = $(".infozingle p:contains('Japanese')").text().replace("Japanese", "").replace(":", "").trim();
+    const producer = $(".infozingle p:contains('Produser')").text().replace("Produser", "").replace(":", "").trim();
+    const duration = $(".infozingle p:contains('Durasi')").text().replace("Durasi", "").replace(":", "").trim();
+    const studio = $(".infozingle p:contains('Studio')").text().replace("Studio", "").replace(":", "").trim();
 
     const genres: string[] = [];
     $(".infozingle p:contains('Genre') a").each((_, a) => {
@@ -257,7 +265,11 @@ export async function getOtakuAnimeDetail(slug: string): Promise<OtakuAnimeDetai
       genres,
       status,
       type,
-      score
+      score,
+      japanese,
+      producer,
+      duration,
+      studio
     };
   } catch (error) {
     console.error("Error retrieving Otakudesu detail:", error);

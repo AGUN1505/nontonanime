@@ -2,7 +2,13 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { getOtakuAnimeDetail, getEpisodeResolutions, getEmbedFromContent } from "@/services/otakudesu";
 import dynamic from "next/dynamic";
-import { ChevronLeft, Star, Info } from "lucide-react";
+import { Star, Info, ArrowLeft, ArrowRight } from "lucide-react";
+import Navbar from "@/components/Navbar";
+import WatchHistoryTracker from "@/components/WatchHistoryTracker";
+
+const BookmarkButton = dynamic(() => import("@/components/BookmarkButton"), {
+  ssr: false,
+});
 
 // Dynamically load client-side components to avoid build/SSR issues
 const VideoPlayer = dynamic(() => import("@/components/VideoPlayer"), {
@@ -59,6 +65,11 @@ export default async function WatchPage({ params, searchParams }: Props) {
     }
   }
 
+  // 6. Find Prev & Next episodes
+  const currentIndex = episodes.findIndex((ep) => ep.number === currentEpisode?.number);
+  const prevEpisode = currentIndex > 0 ? episodes[currentIndex - 1] : null;
+  const nextEpisode = currentIndex < episodes.length - 1 ? episodes[currentIndex + 1] : null;
+
   // Helper to check if current episode is active
   const isActiveEpisode = (epNumber: string) => {
     if (activeEpisodeParam) {
@@ -70,16 +81,8 @@ export default async function WatchPage({ params, searchParams }: Props) {
 
   return (
     <div className="flex flex-col min-h-screen bg-zinc-950 text-zinc-50 pb-12">
-      {/* Header */}
-      <header className="bg-zinc-950 border-b border-zinc-900 px-6 py-4 flex items-center gap-4">
-        <Link href="/" className="flex items-center gap-1 text-zinc-400 hover:text-zinc-100 transition text-sm">
-          <ChevronLeft className="size-4" /> Kembali
-        </Link>
-        <span className="text-zinc-700">|</span>
-        <h1 className="text-sm font-semibold truncate text-zinc-300">
-          {anime.title} {currentEpisode ? `- Episode ${currentEpisode.number}` : ""}
-        </h1>
-      </header>
+      <Navbar />
+      <WatchHistoryTracker anime={{ slug: params.id, title: anime.title, image: anime.image }} episode={currentEpisode} />
 
       {/* Main Content */}
       <main className="px-4 md:px-12 mt-6 grid grid-cols-1 lg:grid-cols-3 gap-8">
@@ -87,7 +90,48 @@ export default async function WatchPage({ params, searchParams }: Props) {
         <div className="lg:col-span-2 flex flex-col gap-6">
           {/* Video Player */}
           {streamUrl ? (
-            <VideoPlayer src={streamUrl} />
+            <div className="flex flex-col gap-4">
+              <VideoPlayer src={streamUrl} />
+              
+              {/* Navigation Episode Buttons */}
+              <div className="flex items-center justify-between gap-4 bg-zinc-900/40 border border-zinc-900 rounded-lg p-3">
+                {prevEpisode ? (
+                  <Link
+                    href={`/watch/${params.id}?ep=${prevEpisode.number}`}
+                    className="flex items-center gap-1.5 px-4 py-2 bg-zinc-900 border border-zinc-800 text-zinc-300 hover:text-zinc-100 rounded-lg text-sm font-semibold hover:bg-zinc-800 transition"
+                  >
+                    <ArrowLeft className="size-4" /> Ep {prevEpisode.number}
+                  </Link>
+                ) : (
+                  <button
+                    disabled
+                    className="flex items-center gap-1.5 px-4 py-2 bg-zinc-950/45 border border-zinc-900/50 text-zinc-600 rounded-lg text-sm font-semibold cursor-not-allowed"
+                  >
+                    <ArrowLeft className="size-4" /> Mulai
+                  </button>
+                )}
+
+                <span className="text-xs text-zinc-500 font-semibold uppercase tracking-wider">
+                  Episode {currentEpisode?.number}
+                </span>
+
+                {nextEpisode ? (
+                  <Link
+                    href={`/watch/${params.id}?ep=${nextEpisode.number}`}
+                    className="flex items-center gap-1.5 px-4 py-2 bg-red-600 text-white rounded-lg text-sm font-semibold hover:bg-red-700 transition"
+                  >
+                    Ep {nextEpisode.number} <ArrowRight className="size-4" />
+                  </Link>
+                ) : (
+                  <button
+                    disabled
+                    className="flex items-center gap-1.5 px-4 py-2 bg-zinc-950/45 border border-zinc-900/50 text-zinc-600 rounded-lg text-sm font-semibold cursor-not-allowed"
+                  >
+                    Tamat <ArrowRight className="size-4" />
+                  </button>
+                )}
+              </div>
+            </div>
           ) : (
             <div className="relative aspect-video w-full bg-black rounded-lg overflow-hidden flex items-center justify-center border border-zinc-900">
               <div className="flex flex-col items-center gap-3 text-zinc-500">
@@ -98,7 +142,18 @@ export default async function WatchPage({ params, searchParams }: Props) {
 
           {/* Anime Detail */}
           <div className="flex flex-col gap-4">
-            <h2 className="text-2xl font-bold tracking-tight">{anime.title}</h2>
+            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+              <h2 className="text-2xl font-bold tracking-tight">{anime.title}</h2>
+              <BookmarkButton
+                anime={{
+                  slug: params.id,
+                  title: anime.title,
+                  image: anime.image,
+                  status: anime.status,
+                  episodesCount: anime.episodes.length,
+                }}
+              />
+            </div>
             <div className="flex flex-wrap items-center gap-3 text-xs md:text-sm text-zinc-400">
               <span className="flex items-center gap-1 text-yellow-500 font-bold">
                 <Star className="size-4 fill-yellow-500" /> {anime.score || "N/A"}
@@ -179,6 +234,12 @@ export default async function WatchPage({ params, searchParams }: Props) {
               <Info className="size-4" /> Informasi Tambahan
             </h3>
             <div className="flex flex-col gap-2 text-xs text-zinc-400">
+              {anime.japanese && (
+                <div className="flex justify-between border-b border-zinc-900 pb-1.5 gap-4">
+                  <span className="flex-shrink-0">Japanese:</span>
+                  <span className="font-semibold text-zinc-200 text-right">{anime.japanese}</span>
+                </div>
+              )}
               <div className="flex justify-between border-b border-zinc-900 pb-1.5">
                 <span>Total Episode:</span>
                 <span className="font-semibold text-zinc-200">{anime.episodes.length || "?"}</span>
@@ -187,10 +248,28 @@ export default async function WatchPage({ params, searchParams }: Props) {
                 <span>Status:</span>
                 <span className="font-semibold text-zinc-200">{anime.status}</span>
               </div>
-              <div className="flex justify-between">
+              <div className="flex justify-between border-b border-zinc-900 pb-1.5">
                 <span>Tipe:</span>
                 <span className="font-semibold text-zinc-200">{anime.type}</span>
               </div>
+              {anime.studio && (
+                <div className="flex justify-between border-b border-zinc-900 pb-1.5">
+                  <span>Studio:</span>
+                  <span className="font-semibold text-zinc-200">{anime.studio}</span>
+                </div>
+              )}
+              {anime.producer && (
+                <div className="flex justify-between border-b border-zinc-900 pb-1.5 gap-4">
+                  <span className="flex-shrink-0">Produser:</span>
+                  <span className="font-semibold text-zinc-200 text-right">{anime.producer}</span>
+                </div>
+              )}
+              {anime.duration && (
+                <div className="flex justify-between">
+                  <span>Durasi:</span>
+                  <span className="font-semibold text-zinc-200">{anime.duration}</span>
+                </div>
+              )}
             </div>
           </div>
         </div>

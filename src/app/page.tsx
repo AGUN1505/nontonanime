@@ -1,9 +1,18 @@
 import Link from "next/link";
 import { getOngoingAnime, getCompleteAnime, searchOtakuAnime } from "@/services/otakudesu";
-import { Star, TrendingUp, Search, ChevronLeft, ChevronRight, Flame, CheckCircle } from "lucide-react";
+import { Star, TrendingUp, ChevronLeft, ChevronRight, Flame, CheckCircle } from "lucide-react";
 import dynamic from "next/dynamic";
+import Navbar from "@/components/Navbar";
 
 const HeroSlider = dynamic(() => import("@/components/HeroSlider"), {
+  ssr: false,
+});
+
+const WatchHistoryList = dynamic(() => import("@/components/WatchHistoryList"), {
+  ssr: false,
+});
+
+const BookmarkList = dynamic(() => import("@/components/BookmarkList"), {
   ssr: false,
 });
 
@@ -31,46 +40,7 @@ export default async function Home({ searchParams }: HomeProps) {
 
   return (
     <div className="flex flex-col min-h-screen pb-12 bg-zinc-950 text-zinc-50">
-      {/* Header */}
-      <header className="sticky top-0 z-50 bg-zinc-950/80 backdrop-blur-md border-b border-zinc-900 px-6 py-4 flex items-center justify-between">
-        <Link href="/" className="text-xl font-bold text-red-500 tracking-wider">
-          NONTONANIME
-        </Link>
-        <div className="flex items-center gap-6">
-          <form action="/" method="GET" className="relative hidden md:block">
-            <input
-              type="text"
-              name="q"
-              defaultValue={query}
-              placeholder="Cari judul anime..."
-              className="bg-zinc-900 border border-zinc-800 text-sm px-4 py-2 pl-10 pr-8 rounded-full w-64 focus:outline-none focus:border-red-500 text-zinc-100 placeholder-zinc-500"
-            />
-            <Search className="absolute left-3 top-2.5 size-4 text-zinc-500" />
-          </form>
-          <nav className="flex items-center gap-4 text-sm font-medium text-zinc-400">
-            <Link href="/" className="hover:text-zinc-100 transition">Home</Link>
-            <Link href="/ongoing" className="hover:text-zinc-100 transition">Ongoing</Link>
-            <Link href="/complete" className="hover:text-zinc-100 transition">Completed</Link>
-            <Link href="/anime-list" className="hover:text-zinc-100 transition">Anime List</Link>
-            <Link href="/schedule" className="hover:text-zinc-100 transition">Jadwal Rilis</Link>
-            <Link href="/genres" className="hover:text-zinc-100 transition">Genres</Link>
-          </nav>
-        </div>
-      </header>
-
-      {/* Input mobile search */}
-      <div className="px-6 mt-4 block md:hidden">
-        <form action="/" method="GET" className="relative w-full">
-          <input
-            type="text"
-            name="q"
-            defaultValue={query}
-            placeholder="Cari judul anime..."
-            className="bg-zinc-900 border border-zinc-800 text-sm px-4 py-2.5 pl-10 pr-8 rounded-lg w-full focus:outline-none focus:border-red-500 text-zinc-100 placeholder-zinc-500"
-          />
-          <Search className="absolute left-3 top-3 size-4 text-zinc-500" />
-        </form>
-      </div>
+      <Navbar />
 
       {/* Dynamic Hero Slider (Only show when not searching and on page 1) */}
       {!query && page === 1 && sliderSlides.length > 0 && (
@@ -78,9 +48,15 @@ export default async function Home({ searchParams }: HomeProps) {
       )}
 
       {/* Main Content Area */}
-      <main className="px-6 md:px-12 mt-12 grid grid-cols-1 lg:grid-cols-4 gap-8">
+      <main className="px-4 md:px-12 mt-8 grid grid-cols-1 lg:grid-cols-4 gap-8">
         {/* Left: Popular list / Search results */}
         <section className="lg:col-span-3">
+          {/* Watch History Section */}
+          {!query && page === 1 && <WatchHistoryList />}
+
+          {/* Bookmark Section */}
+          {!query && page === 1 && <BookmarkList />}
+
           {query ? (
             <div>
               <div className="flex items-center justify-between mb-6">
