@@ -1,3 +1,4 @@
+import Image from "next/image";
 import Link from "next/link";
 import { getOngoingAnime, getCompleteAnime, searchOtakuAnime } from "@/services/otakudesu";
 import { Star, TrendingUp, ChevronLeft, ChevronRight, Flame, CheckCircle } from "lucide-react";
@@ -75,21 +76,24 @@ export default async function Home({ searchParams }: HomeProps) {
                     >
                       <div className="relative aspect-[3/4] w-full overflow-hidden">
                         {anime.image ? (
-                          <img 
+                          <Image 
                             src={anime.image} 
                             alt={anime.title}
+                            fill
+                            sizes="(max-width: 640px) 50vw, (max-width: 1024px) 25vw, 15vw"
                             className="object-cover w-full h-full group-hover:scale-105 transition duration-300"
                             loading="lazy"
+                            unoptimized
                           />
                         ) : (
                           <div className="w-full h-full bg-zinc-900 flex items-center justify-center text-zinc-600 text-xs">
                             No Image
                           </div>
                         )}
-                            <div className="absolute top-2 right-2 bg-zinc-950/80 backdrop-blur-sm px-2 py-0.5 rounded text-[10px] font-bold text-red-500 flex items-center gap-0.5">
+                            <div className="absolute top-2 right-2 bg-zinc-950/80 backdrop-blur-sm px-2 py-0.5 rounded text-[10px] font-bold text-red-500 flex items-center gap-0.5 z-10">
                               {anime.rating || "N/A"}
                             </div>
-                        <div className="absolute bottom-2 left-2 bg-red-600 text-white text-[10px] font-bold px-1.5 py-0.5 rounded">
+                        <div className="absolute bottom-2 left-2 bg-red-600 text-white text-[10px] font-bold px-1.5 py-0.5 rounded z-10">
                           {anime.status}
                         </div>
                       </div>
@@ -134,21 +138,24 @@ export default async function Home({ searchParams }: HomeProps) {
                         >
                           <div className="relative aspect-[3/4] w-full overflow-hidden">
                             {anime.image ? (
-                              <img 
+                              <Image 
                                 src={anime.image} 
                                 alt={anime.title}
+                                fill
+                                sizes="(max-width: 640px) 50vw, (max-width: 1024px) 25vw, 15vw"
                                 className="object-cover w-full h-full group-hover:scale-105 transition duration-300"
                                 loading="lazy"
+                                unoptimized
                               />
                             ) : (
                               <div className="w-full h-full bg-zinc-900 flex items-center justify-center text-zinc-600 text-xs">
                                 No Image
                               </div>
                             )}
-                            <div className="absolute top-2 right-2 bg-zinc-950/80 backdrop-blur-sm px-2 py-0.5 rounded text-[10px] font-bold text-yellow-500 flex items-center gap-0.5">
+                            <div className="absolute top-2 right-2 bg-zinc-950/80 backdrop-blur-sm px-2 py-0.5 rounded text-[10px] font-bold text-yellow-500 flex items-center gap-0.5 z-10">
                               <Star className="size-3 fill-yellow-500" /> {anime.rating || "N/A"}
                             </div>
-                            <div className="absolute bottom-2 left-2 bg-red-600 text-white text-[10px] font-bold px-1.5 py-0.5 rounded">
+                            <div className="absolute bottom-2 left-2 bg-red-600 text-white text-[10px] font-bold px-1.5 py-0.5 rounded z-10">
                               {anime.status}
                             </div>
                           </div>
@@ -190,21 +197,24 @@ export default async function Home({ searchParams }: HomeProps) {
                         >
                           <div className="relative aspect-[3/4] w-full overflow-hidden">
                             {anime.image ? (
-                              <img 
+                              <Image 
                                 src={anime.image} 
                                 alt={anime.title}
+                                fill
+                                sizes="(max-width: 640px) 50vw, (max-width: 1024px) 25vw, 15vw"
                                 className="object-cover w-full h-full group-hover:scale-105 transition duration-300"
                                 loading="lazy"
+                                unoptimized
                               />
                             ) : (
                               <div className="w-full h-full bg-zinc-900 flex items-center justify-center text-zinc-600 text-xs">
                                 No Image
                               </div>
                             )}
-                            <div className="absolute top-2 right-2 bg-zinc-950/80 backdrop-blur-sm px-2 py-0.5 rounded text-[10px] font-bold text-yellow-500 flex items-center gap-0.5">
+                            <div className="absolute top-2 right-2 bg-zinc-950/80 backdrop-blur-sm px-2 py-0.5 rounded text-[10px] font-bold text-yellow-500 flex items-center gap-0.5 z-10">
                               <Star className="size-3 fill-yellow-500" /> {anime.rating || "N/A"}
                             </div>
-                            <div className="absolute bottom-2 left-2 bg-emerald-600 text-white text-[10px] font-bold px-1.5 py-0.5 rounded">
+                            <div className="absolute bottom-2 left-2 bg-emerald-600 text-white text-[10px] font-bold px-1.5 py-0.5 rounded z-10">
                               {anime.status}
                             </div>
                           </div>
@@ -244,11 +254,14 @@ export default async function Home({ searchParams }: HomeProps) {
                 </div>
                 <div className="relative w-12 h-16 rounded overflow-hidden flex-shrink-0">
                   {anime.image ? (
-                    <img 
+                    <Image 
                       src={anime.image} 
                       alt={anime.title}
+                      fill
+                      sizes="48px"
                       className="object-cover w-full h-full"
                       loading="lazy"
+                      unoptimized
                     />
                   ) : (
                     <div className="w-full h-full bg-zinc-900 flex items-center justify-center text-zinc-700 text-xs">

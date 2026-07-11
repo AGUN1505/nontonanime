@@ -52,7 +52,7 @@ export default function WatchHistoryTracker({ anime, episode }: TrackerProps) {
     } catch (e) {
       console.error("Failed to update watch history:", e);
     }
-  }, [anime.slug, anime.title, anime.image, episode?.number]);
+  }, [anime.slug, anime.title, anime.image, episode]);
 
   return null; // Silent tracker component
 }
