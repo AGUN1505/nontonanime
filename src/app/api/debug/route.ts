@@ -14,7 +14,10 @@ export async function GET() {
   };
 
   try {
-    const res = await fetch(OTAKUDESU_BASE, {
+    const PROXY_URL = "https://api.allorigins.win/raw?url=";
+    const proxiedUrl = `${PROXY_URL}${encodeURIComponent(OTAKUDESU_BASE)}`;
+
+    const res = await fetch(proxiedUrl, {
       headers: {
         "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
         "Referer": OTAKUDESU_BASE,

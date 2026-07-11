@@ -2,10 +2,18 @@ import * as cheerio from "cheerio";
 
 export const OTAKUDESU_BASE = "https://otakudesu.blog";
 
+const PROXY_URL = "https://api.allorigins.win/raw?url=";
+
 const HEADERS = {
   "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
   "Referer": OTAKUDESU_BASE,
 };
+
+async function fetchWithProxy(url: string, init?: RequestInit): Promise<Response> {
+  const proxiedUrl = `${PROXY_URL}${encodeURIComponent(url)}`;
+  const headers = { ...HEADERS, ...(init?.headers || {}) };
+  return fetch(proxiedUrl, { ...init, headers });
+}
 
 export interface OtakuAnimeCard {
   title: string;
@@ -50,7 +58,7 @@ export interface OtakuResolution {
 export async function getOngoingAnime(page: number = 1): Promise<OtakuAnimeCard[]> {
   try {
     const url = page > 1 ? `${OTAKUDESU_BASE}/ongoing-anime/page/${page}/` : `${OTAKUDESU_BASE}/ongoing-anime/`;
-    const res = await fetch(url, { headers: HEADERS, next: { revalidate: 1800 } });
+    const res = await fetchWithProxy(url, { next: { revalidate: 1800 } });
     if (!res.ok) return [];
 
     const html = await res.text();
@@ -89,7 +97,7 @@ export async function getOngoingAnime(page: number = 1): Promise<OtakuAnimeCard[
 export async function getCompleteAnime(page: number = 1): Promise<OtakuAnimeCard[]> {
   try {
     const url = page > 1 ? `${OTAKUDESU_BASE}/complete-anime/page/${page}/` : `${OTAKUDESU_BASE}/complete-anime/`;
-    const res = await fetch(url, { headers: HEADERS, next: { revalidate: 3600 } });
+    const res = await fetchWithProxy(url, { next: { revalidate: 3600 } });
     if (!res.ok) return [];
 
     const html = await res.text();
@@ -129,7 +137,7 @@ export async function searchOtakuAnime(query: string): Promise<OtakuAnimeCard[]>
     const cleanQuery = query.replace(/[^a-zA-Z0-9\s]/g, "").trim();
     const searchUrl = `${OTAKUDESU_BASE}/?s=${encodeURIComponent(cleanQuery)}&post_type=anime`;
     
-    const res = await fetch(searchUrl, { headers: HEADERS, next: { revalidate: 3600 } });
+    const res = await fetchWithProxy(searchUrl, { next: { revalidate: 3600 } });
     if (!res.ok) return [];
 
     const html = await res.text();
@@ -179,7 +187,7 @@ export async function searchOtakuAnime(query: string): Promise<OtakuAnimeCard[]>
 export async function getOtakuAnimeDetail(slug: string): Promise<OtakuAnimeDetail | null> {
   try {
     const detailUrl = `${OTAKUDESU_BASE}/anime/${slug}/`;
-    const res = await fetch(detailUrl, { headers: HEADERS, next: { revalidate: 3600 } });
+    const res = await fetchWithProxy(detailUrl, { next: { revalidate: 3600 } });
     if (!res.ok) return null;
 
     const html = await res.text();
@@ -280,7 +288,7 @@ export async function getOtakuAnimeDetail(slug: string): Promise<OtakuAnimeDetai
 // Scrape resolution options from the episode page
 export async function getEpisodeResolutions(episodeUrl: string): Promise<OtakuResolution[]> {
   try {
-    const res = await fetch(episodeUrl, { headers: HEADERS, next: { revalidate: 3600 } });
+    const res = await fetchWithProxy(episodeUrl, { next: { revalidate: 3600 } });
     if (!res.ok) return [];
 
     const html = await res.text();
@@ -318,12 +326,10 @@ export async function getEmbedFromContent(episodeUrl: string, content: string): 
     const nonceParams = new URLSearchParams();
     nonceParams.append("action", "aa1208d27f29ca340c92c66d1926f13f");
 
-    const nonceRes = await fetch(`${OTAKUDESU_BASE}/wp-admin/admin-ajax.php`, {
+    const nonceRes = await fetchWithProxy(`${OTAKUDESU_BASE}/wp-admin/admin-ajax.php`, {
       method: "POST",
       headers: { 
         "Content-Type": "application/x-www-form-urlencoded",
-        "User-Agent": HEADERS["User-Agent"],
-        "Referer": episodeUrl
       },
       body: nonceParams.toString(),
     });
@@ -340,12 +346,10 @@ export async function getEmbedFromContent(episodeUrl: string, content: string): 
     embedParams.append("nonce", sessionNonce);
     embedParams.append("action", "2a3505c93b0035d3f455df82bf976b84");
 
-    const embedRes = await fetch(`${OTAKUDESU_BASE}/wp-admin/admin-ajax.php`, {
+    const embedRes = await fetchWithProxy(`${OTAKUDESU_BASE}/wp-admin/admin-ajax.php`, {
       method: "POST",
       headers: { 
         "Content-Type": "application/x-www-form-urlencoded",
-        "User-Agent": HEADERS["User-Agent"],
-        "Referer": episodeUrl
       },
       body: embedParams.toString(),
     });
@@ -378,7 +382,7 @@ export interface OtakuScheduleDay {
 export async function getReleaseSchedule(): Promise<OtakuScheduleDay[]> {
   try {
     const url = `${OTAKUDESU_BASE}/jadwal-rilis/`;
-    const res = await fetch(url, { headers: HEADERS, next: { revalidate: 3600 } });
+    const res = await fetchWithProxy(url, { next: { revalidate: 3600 } });
     if (!res.ok) return [];
 
     const html = await res.text();
@@ -439,7 +443,7 @@ export interface OtakuGenre {
 export async function getOtakuGenres(): Promise<OtakuGenre[]> {
   try {
     const url = `${OTAKUDESU_BASE}/genre-list/`;
-    const res = await fetch(url, { headers: HEADERS, next: { revalidate: 86400 } }); // Cache genre list for 24h
+    const res = await fetchWithProxy(url, { next: { revalidate: 86400 } }); // Cache genre list for 24h
     if (!res.ok) return [];
 
     const html = await res.text();
@@ -470,7 +474,7 @@ export async function getAnimeByGenre(genreSlug: string, page: number = 1): Prom
       ? `${OTAKUDESU_BASE}/genres/${genreSlug}/page/${page}/`
       : `${OTAKUDESU_BASE}/genres/${genreSlug}/`;
 
-    const res = await fetch(url, { headers: HEADERS, next: { revalidate: 3600 } });
+    const res = await fetchWithProxy(url, { next: { revalidate: 3600 } });
     if (!res.ok) return [];
 
     const html = await res.text();
@@ -520,7 +524,7 @@ export interface OtakuAlphabetGroup {
 export async function getAnimeList(): Promise<OtakuAlphabetGroup[]> {
   try {
     const url = `${OTAKUDESU_BASE}/anime-list/`;
-    const res = await fetch(url, { headers: HEADERS, next: { revalidate: 86400 } });
+    const res = await fetchWithProxy(url, { next: { revalidate: 86400 } });
     if (!res.ok) return [];
 
     const html = await res.text();
